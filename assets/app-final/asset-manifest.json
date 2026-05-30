@@ -1,0 +1,63 @@
+{
+  "decor": {
+    "collectHeader": "decor/collect/collect_header_square_bg_true_transparent.png",
+    "declarationBottom": "decor/declaration/declaration_bottom_bg_transparent.png",
+    "drawerHeader": "decor/drawer/days_drawer_header_decor_transparent.png"
+  },
+  "tabs": {
+    "today": "icons/tab/tab-today.svg",
+    "drawer": "icons/tab/tab-drawer.svg",
+    "me": "icons/tab/tab-me.svg"
+  },
+  "ipStates": {
+    "idle_default": {
+      "label": "默认水豚",
+      "frames": "ip/states/idle_default_natural/frames",
+      "animated": "ip/states/idle_default_natural/idle_default_natural_animated_clean.png"
+    },
+    "sleepy_lied_down": {
+      "label": "躺了一天 / 嗜睡",
+      "frames": "ip/states/sleepy_lied_down_natural/frames",
+      "animated": "ip/states/sleepy_lied_down_natural/sleepy_lied_down_natural_animated_clean.png",
+      "drawerStamp": "ip/drawer-stamps/sleepy_lied_down_stamp_final.png"
+    },
+    "phone_dazed": {
+      "label": "沉迷刷手机 / 正在发呆",
+      "frames": "ip/states/phone_dazed_natural/frames",
+      "animated": "ip/states/phone_dazed_natural/phone_dazed_natural_animated_clean.png",
+      "drawerStamp": "ip/drawer-stamps/phone_dazed_stamp_final.png"
+    },
+    "chest_tight_hug": {
+      "label": "胸口闷 / 觉得委屈 / 无故流泪",
+      "frames": "ip/states/chest_tight_hug_natural/frames",
+      "animated": "ip/states/chest_tight_hug_natural/chest_tight_hug_natural_animated_clean.png",
+      "drawerStamp": "ip/drawer-stamps/chest_tight_hug_stamp_final.png"
+    },
+    "hide_behind_spoon": {
+      "label": "不想回消息 / 不想见人",
+      "frames": "ip/states/hide_behind_spoon_natural/frames",
+      "animated": "ip/states/hide_behind_spoon_natural/hide_behind_spoon_natural_animated_clean.png"
+    },
+    "fear_tomorrow_night": {
+      "label": "害怕明天 / 怕别人失望",
+      "frames": "ip/states/fear_tomorrow_night_natural/frames",
+      "animated": "ip/states/fear_tomorrow_night_natural/fear_tomorrow_night_natural_animated_clean.png",
+      "drawerStamp": "ip/drawer-stamps/fear_tomorrow_night_stamp_final.png"
+    },
+    "no_appetite_blanket": {
+      "label": "没洗头 / 没有食欲",
+      "frames": "ip/states/no_appetite_blanket_natural/frames",
+      "animated": "ip/states/no_appetite_blanket_natural/no_appetite_blanket_natural_animated_clean.png"
+    },
+    "overwhelmed_noise": {
+      "label": "被消息淹没 / 外面太吵 / 什么都很刺耳",
+      "frames": "ip/states/overwhelmed_noise_natural/frames",
+      "animated": "ip/states/overwhelmed_noise_natural/overwhelmed_noise_natural_animated_clean.png"
+    },
+    "drawer_keeper": {
+      "label": "日子抽屉头图水豚",
+      "frames": "ip/states/drawer_keeper_natural/frames",
+      "animated": "ip/states/drawer_keeper_natural/drawer_keeper_natural_animated_clean.png"
+    }
+  }
+}

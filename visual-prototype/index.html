@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>勺子星人 App 原型</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app" aria-label="勺子星人 App 原型">
+      <section class="screen screen-state is-active" data-screen="state" aria-label="状态收集">
+        <div class="app-bg">
+          <span class="mist mist-a"></span>
+          <span class="mist mist-b"></span>
+          <span class="star star-a"></span>
+          <span class="soft-dot dot-a"></span>
+          <span class="soft-dot dot-b"></span>
+        </div>
+
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">今天 · 上海</p>
+            <p class="weather-copy">天灰蒙蒙的，像罩了层毛玻璃</p>
+          </div>
+          <button class="icon-button" type="button" aria-label="天气设置">
+            <span></span>
+          </button>
+        </header>
+
+        <section class="mascot-stage" aria-label="抱着勺子的水豚">
+          <div class="flower-vase" aria-hidden="true">
+            <span class="stem"></span>
+            <span class="flower"></span>
+          </div>
+          <div class="hourglass" aria-hidden="true"></div>
+          <div class="capybara capybara-sitting" aria-hidden="true">
+            <span class="spoon spoon-hugged"></span>
+            <span class="body"></span>
+            <span class="head"></span>
+            <span class="ear ear-left"></span>
+            <span class="ear ear-right"></span>
+            <span class="eye eye-left"></span>
+            <span class="eye eye-right"></span>
+            <span class="nose"></span>
+            <span class="arm arm-left"></span>
+            <span class="arm arm-right"></span>
+            <span class="leg leg-left"></span>
+            <span class="leg leg-right"></span>
+          </div>
+        </section>
+
+        <section class="state-copy">
+          <h1>今天像什么样子？</h1>
+          <p>选几个就好，不用解释。</p>
+        </section>
+
+        <section class="word-cloud" aria-label="选择今天的状态">
+          <button class="state-word is-selected" type="button">躺了一天</button>
+          <button class="state-word" type="button">没洗头</button>
+          <button class="state-word drift-up" type="button">嗜睡</button>
+          <button class="state-word wide" type="button">胸口闷</button>
+          <button class="state-word drift-down" type="button">没有食欲</button>
+          <button class="state-word is-selected wide" type="button">沉迷刷手机</button>
+          <button class="state-word" type="button">不想回消息</button>
+          <button class="state-word is-selected drift-up" type="button">觉得委屈</button>
+          <button class="state-word wide" type="button">害怕明天</button>
+          <button class="state-word" type="button">随便吧</button>
+          <button class="state-word drift-down" type="button">正在发呆</button>
+          <button class="state-word wide" type="button">装正常好累</button>
+        </section>
+
+        <button class="primary-action" type="button" data-generate>
+          生成今日声明
+        </button>
+      </section>
+
+      <section class="screen screen-statement" data-screen="statement" aria-label="今日声明">
+        <div class="app-bg">
+          <span class="mist mist-a"></span>
+          <span class="mist mist-c"></span>
+          <span class="star star-b"></span>
+          <span class="soft-dot dot-c"></span>
+        </div>
+
+        <header class="topbar compact">
+          <button class="back-button" type="button" data-back-state aria-label="返回状态收集"></button>
+          <div>
+            <p class="eyebrow">今日声明</p>
+            <p class="weather-copy">先把今天放在这里。</p>
+          </div>
+        </header>
+
+        <section class="small-stage" aria-label="抱着勺子的水豚">
+          <div class="capybara capybara-small" aria-hidden="true">
+            <span class="spoon spoon-side"></span>
+            <span class="body"></span>
+            <span class="head"></span>
+            <span class="ear ear-left"></span>
+            <span class="ear ear-right"></span>
+            <span class="eye eye-left"></span>
+            <span class="eye eye-right"></span>
+            <span class="nose"></span>
+            <span class="arm arm-left"></span>
+            <span class="arm arm-right"></span>
+          </div>
+        </section>
+
+        <section class="statement-panel" aria-live="polite">
+          <p class="state-strip">今天的你：<span data-selected-text>躺了一天、沉迷刷手机、觉得委屈</span></p>
+          <p class="statement-text" data-statement-text>
+            今天已经很沉了。躺了一天、沉迷刷手机、觉得委屈，这些不是你在偷懒，而是身体和心里都在把门关小一点。外面灰灰的，你也不用急着把自己解释清楚。
+          </p>
+        </section>
+
+        <div class="action-stack">
+          <button class="primary-action" type="button" data-accept>
+            今天先这样
+          </button>
+          <button class="text-action" type="button" data-regenerate>
+            换一种说法
+          </button>
+        </div>
+      </section>
+
+      <section class="screen screen-drawer" data-screen="drawer" aria-label="日子抽屉">
+        <div class="app-bg">
+          <span class="mist mist-a"></span>
+          <span class="mist mist-b"></span>
+          <span class="star star-c"></span>
+        </div>
+
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">慢慢收好</p>
+            <h1>日子抽屉</h1>
+          </div>
+          <button class="icon-button" type="button" aria-label="筛选记录">
+            <span></span>
+          </button>
+        </header>
+
+        <section class="drawer-hero">
+          <div class="drawer-mascot" aria-hidden="true">
+            <span></span>
+          </div>
+          <p>这里放着一些不用解释的日子。</p>
+        </section>
+
+        <section class="record-list" aria-label="历史记录" data-record-list>
+          <article class="record-card">
+            <time>今天</time>
+            <div class="record-tags">
+              <span>躺了一天</span>
+              <span>沉迷刷手机</span>
+              <span>觉得委屈</span>
+            </div>
+            <p>今天已经很沉了。身体和心里都在把门关小一点，外面灰灰的，你也不用急着把自己解释清楚。</p>
+          </article>
+
+          <article class="record-card muted">
+            <time>5月22日</time>
+            <div class="record-tags">
+              <span>不想回消息</span>
+              <span>胸口闷</span>
+            </div>
+            <p>没有回复，也是一种保护。你不需要立刻把自己交给外面的声音。</p>
+          </article>
+
+          <article class="record-card muted">
+            <time>5月18日</time>
+            <div class="record-tags">
+              <span>正在发呆</span>
+              <span>随便吧</span>
+            </div>
+            <p>发呆不是空白，它可能只是你在给自己留一点缝隙。</p>
+          </article>
+        </section>
+      </section>
+
+      <section class="screen screen-me" data-screen="me" aria-label="我的">
+        <div class="app-bg">
+          <span class="mist mist-a"></span>
+          <span class="mist mist-c"></span>
+          <span class="star star-b"></span>
+          <span class="soft-dot dot-b"></span>
+        </div>
+
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">只保留必要的</p>
+            <h1>我的</h1>
+          </div>
+        </header>
+
+        <section class="me-hero" aria-label="我的状态">
+          <div>
+            <h2>灿生</h2>
+            <p>把每天会影响心情的小偏好，放在一个安静的地方。</p>
+            <div class="me-pills" aria-label="当前偏好">
+              <span>广州天气</span>
+              <span>22:30 提醒</span>
+            </div>
+          </div>
+          <div class="me-mascot" aria-hidden="true">
+            <span class="me-mascot-head"></span>
+            <span class="me-mascot-spoon"></span>
+          </div>
+        </section>
+
+        <section class="settings-stack" aria-label="个人设置">
+          <div class="settings-group">
+            <h2>今日偏好</h2>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-weather"></span>
+              <span class="setting-text">城市与天气</span>
+              <span class="setting-value">广州 · 可关闭</span>
+              <span class="chevron"></span>
+            </button>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-bell"></span>
+              <span class="setting-text">每日提醒</span>
+              <span class="setting-value">22:30</span>
+              <span class="chevron"></span>
+            </button>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-tone"></span>
+              <span class="setting-text">声明语气</span>
+              <span class="setting-value">温柔直接</span>
+              <span class="chevron"></span>
+            </button>
+          </div>
+
+          <div class="settings-group">
+            <h2>记录与安全</h2>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-export"></span>
+              <span class="setting-text">导出日子抽屉</span>
+              <span class="chevron"></span>
+            </button>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-shield"></span>
+              <span class="setting-text">隐私与 AI 说明</span>
+              <span class="chevron"></span>
+            </button>
+            <button class="setting-row" type="button">
+              <span class="setting-icon icon-empty"></span>
+              <span class="setting-text">删除全部记录</span>
+              <span class="setting-value">慎重操作</span>
+              <span class="chevron"></span>
+            </button>
+          </div>
+        </section>
+
+        <div class="me-footer" aria-label="帮助">
+          <button type="button">给我们反馈</button>
+          <span></span>
+          <button type="button">关于勺子星人</button>
+        </div>
+      </section>
+
+      <nav class="bottom-nav" aria-label="主导航">
+        <button class="nav-item is-active" type="button" data-nav="state">
+          <span class="nav-icon nav-today"></span>
+          <span>今天</span>
+        </button>
+        <button class="nav-item" type="button" data-nav="statement">
+          <span class="nav-icon nav-note"></span>
+          <span>声明</span>
+        </button>
+        <button class="nav-item" type="button" data-nav="drawer">
+          <span class="nav-icon nav-drawer"></span>
+          <span>抽屉</span>
+        </button>
+        <button class="nav-item" type="button" data-nav="me">
+          <span class="nav-icon nav-me"></span>
+          <span>我的</span>
+        </button>
+      </nav>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
