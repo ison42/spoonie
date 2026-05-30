@@ -152,81 +152,66 @@ struct EntryDetailView: View {
     let entry: DailyEntry
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Color.spoonieBackground.ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                Color.spoonieBackground.ignoresSafeArea()
 
-            AssetImage(path: "decor/collect/collect_header_square_bg_true_transparent.png")
-                .frame(width: 375, height: 375)
-                .offset(y: 52)
-                .allowsHitTesting(false)
+                AssetImage(path: "decor/collect/collect_header_square_bg_true_transparent.png")
+                    .frame(width: 375, height: 375)
+                    .offset(y: 52)
+                    .allowsHitTesting(false)
 
-            VStack(spacing: 0) {
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(Color.spoonieInk)
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.72))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Button {
+                                dismiss()
+                            } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(Color.spoonieInk)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.white.opacity(0.72))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(entry.dateTitle)
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(Color.spoonieInk)
-                        Text("放在抽屉里的这一天")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.spoonieMuted)
-                    }
-                    Spacer()
-                    WeatherPill(text: entry.weatherShort, compact: false)
-                        .frame(width: 128)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(entry.dateTitle)
+                                    .font(.system(size: 24, weight: .semibold))
+                                    .foregroundStyle(Color.spoonieInk)
+                                Text("放在抽屉里的这一天")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color.spoonieMuted)
+                            }
+                            Spacer()
+                            WeatherPill(text: entry.weatherShort, compact: false)
+                                .frame(width: 128)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
 
-                AnimatedCapybara(state: entry.capybaraState)
-                    .frame(width: 236, height: 236)
-                    .padding(.top, 6)
+                        AnimatedCapybara(state: entry.capybaraState)
+                            .frame(width: 236, height: 236)
+                            .padding(.top, 6)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("那天的你")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color.spoonieInk.opacity(0.82))
+                        DeclarationContentCard(title: "那天的你", entry: entry)
+                            .padding(.top, -4)
 
-                    HStack(spacing: 10) {
-                        ForEach(entry.tags.prefix(3), id: \.self) { tag in
-                            StatementChip(title: tag)
+                        if entry.hasSupplementalContext {
+                            SupplementalContextPanel(entry: entry)
+                                .frame(width: 341)
+                                .padding(.top, 12)
                         }
                     }
-
-                    Text(entry.statement)
-                        .font(.system(size: 19))
-                        .foregroundStyle(Color(red: 0.30, green: 0.29, blue: 0.40))
-                        .lineSpacing(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 24)
-                        .background(Color.white.opacity(0.82))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.spooniePurple.opacity(0.12), lineWidth: 1)
-                        )
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, max(36, geometry.safeAreaInsets.bottom + 28))
                 }
-                .padding(EdgeInsets(top: 20, leading: 26, bottom: 24, trailing: 26))
-                .frame(width: 341)
-                .spoonieCard(radius: 18)
-                .padding(.top, -4)
             }
         }
         .navigationBarBackButtonHidden()

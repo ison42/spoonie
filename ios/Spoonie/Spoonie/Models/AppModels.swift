@@ -105,12 +105,108 @@ struct DailyEntry: Identifiable, Hashable, Codable {
     var tags: [String]
     var statement: String
     var capybaraState: CapybaraState
+    var supplementalNote: String
+    var supplementalImages: [DailyAttachment]
+
+    init(
+        id: UUID = UUID(),
+        date: Date,
+        weather: String,
+        weatherShort: String,
+        tags: [String],
+        statement: String,
+        capybaraState: CapybaraState,
+        supplementalNote: String = "",
+        supplementalImages: [DailyAttachment] = []
+    ) {
+        self.id = id
+        self.date = date
+        self.weather = weather
+        self.weatherShort = weatherShort
+        self.tags = tags
+        self.statement = statement
+        self.capybaraState = capybaraState
+        self.supplementalNote = supplementalNote
+        self.supplementalImages = supplementalImages
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case date
+        case weather
+        case weatherShort
+        case tags
+        case statement
+        case capybaraState
+        case supplementalNote
+        case supplementalImages
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        date = try container.decode(Date.self, forKey: .date)
+        weather = try container.decode(String.self, forKey: .weather)
+        weatherShort = try container.decode(String.self, forKey: .weatherShort)
+        tags = try container.decode([String].self, forKey: .tags)
+        statement = try container.decode(String.self, forKey: .statement)
+        capybaraState = try container.decode(CapybaraState.self, forKey: .capybaraState)
+        supplementalNote = try container.decodeIfPresent(String.self, forKey: .supplementalNote) ?? ""
+        supplementalImages = try container.decodeIfPresent([DailyAttachment].self, forKey: .supplementalImages) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(date, forKey: .date)
+        try container.encode(weather, forKey: .weather)
+        try container.encode(weatherShort, forKey: .weatherShort)
+        try container.encode(tags, forKey: .tags)
+        try container.encode(statement, forKey: .statement)
+        try container.encode(capybaraState, forKey: .capybaraState)
+        try container.encode(supplementalNote, forKey: .supplementalNote)
+        try container.encode(supplementalImages, forKey: .supplementalImages)
+    }
 
     var dateTitle: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "M月d日 EEEE"
         return formatter.string(from: date).replacingOccurrences(of: "星期", with: "周")
+    }
+
+    var hasSupplementalContext: Bool {
+        !supplementalNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !supplementalImages.isEmpty
+    }
+}
+
+struct DailyAttachment: Identifiable, Hashable, Codable {
+    var id = UUID()
+    var mimeType = "image/jpeg"
+    var dataBase64: String
+
+    var data: Data? {
+        Data(base64Encoded: dataBase64)
+    }
+}
+
+struct SupplementalDraft: Equatable {
+    var note = ""
+    var images: [DailyAttachment] = []
+
+    var hasContent: Bool {
+        !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !images.isEmpty
+    }
+
+    var summaryText: String {
+        var parts: [String] = []
+        if !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            parts.append("已写")
+        }
+        if !images.isEmpty {
+            parts.append("\(images.count)张图")
+        }
+        return parts.isEmpty ? "说多点" : parts.joined(separator: " · ")
     }
 }
 
@@ -176,17 +272,19 @@ enum SpoonieStoreError: Error {
 
 final class SpoonieStore: ObservableObject {
     @Published var selectedTab: AppTab = .today
-    @Published var selectedTags: Set<String> = []
+    @Published var selectedTags: Set<String> = ["躺了一天", "胸口闷", "不想回消息"]
     @Published var customTags: [MoodTag] = []
     @Published var todayEntry: DailyEntry?
     @Published var entries: [DailyEntry] = DailyEntry.samples
     @Published var weatherStatus: WeatherStatus = .needsPermission
     @Published var generationStatus: GenerationStatus = .idle
     @Published var selectedEntry: DailyEntry?
+    @Published var supplementalDraft = SupplementalDraft()
 
     private let database = SpoonieDatabase()
     private let weatherService = LocationWeatherService()
-    private let statementService: StatementAIProviding = LocalStatementAIService()
+    private let statementService: StatementAIProviding = StatementAIServiceFactory.make()
+    private var activeGenerationID: UUID?
 
     let baseMoodTags: [MoodTag] = [
         MoodTag(title: "躺了一天", category: "生理", capybaraState: .sleepyLiedDown, rotation: 4, width: 110),
@@ -284,41 +382,121 @@ final class SpoonieStore: ObservableObject {
             return
         }
 
+        let generationID = UUID()
+        activeGenerationID = generationID
         generationStatus = .loading
+        let startedAt = Date()
         let tags = selectedMoodTags.map(\.title)
         let weather = currentWeatherContext
+        let capybaraState = primaryCapybaraState == .idleDefault ? .chestTightHug : primaryCapybaraState
+        let note = supplementalDraft.note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let images = supplementalDraft.images
         let request = StatementAIRequest(
             tags: tags,
             weather: weather,
             date: Date(),
-            primaryState: primaryCapybaraState
+            primaryState: capybaraState,
+            supplementalNote: note,
+            supplementalImageCount: images.count
         )
 
         let statement: String
         do {
             statement = try await statementService.generateStatement(request)
         } catch {
-            statement = LocalStatementAIService.fallbackStatement(tags: tags, weather: weather)
+            statement = LocalStatementAIService.fallbackStatement(
+                tags: tags,
+                weather: weather,
+                supplementalNote: note,
+                supplementalImageCount: images.count,
+                primaryState: capybaraState
+            )
         }
 
+        let minimumLoadingDuration: TimeInterval = 2.25
+        let remainingLoadingTime = minimumLoadingDuration - Date().timeIntervalSince(startedAt)
+        if remainingLoadingTime > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(remainingLoadingTime * 1_000_000_000))
+        }
+
+        guard activeGenerationID == generationID else { return }
+        commitTodayEntry(
+            tags: tags,
+            weather: weather,
+            statement: statement,
+            capybaraState: capybaraState,
+            supplementalNote: note,
+            supplementalImages: images
+        )
+    }
+
+    @MainActor
+    func cancelGeneration() {
+        activeGenerationID = nil
+        if generationStatus == .loading {
+            generationStatus = .idle
+        }
+    }
+
+    @MainActor
+    func finishGenerationWithLocalStatement() {
+        guard generationStatus == .loading, !selectedTags.isEmpty else { return }
+        activeGenerationID = nil
+        let tags = selectedMoodTags.map(\.title)
+        let weather = currentWeatherContext
+        let capybaraState = primaryCapybaraState == .idleDefault ? .chestTightHug : primaryCapybaraState
+        let note = supplementalDraft.note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let images = supplementalDraft.images
+        let statement = LocalStatementAIService.fallbackStatement(
+            tags: tags,
+            weather: weather,
+            supplementalNote: note,
+            supplementalImageCount: images.count,
+            primaryState: capybaraState
+        )
+        commitTodayEntry(
+            tags: tags,
+            weather: weather,
+            statement: statement,
+            capybaraState: capybaraState,
+            supplementalNote: note,
+            supplementalImages: images
+        )
+    }
+
+    @MainActor
+    private func commitTodayEntry(
+        tags: [String],
+        weather: WeatherContext,
+        statement: String,
+        capybaraState: CapybaraState,
+        supplementalNote: String,
+        supplementalImages: [DailyAttachment]
+    ) {
         let entry = DailyEntry(
             date: Date(),
             weather: weather.narrative,
             weatherShort: weather.shortText,
             tags: tags,
             statement: statement,
-            capybaraState: primaryCapybaraState == .idleDefault ? .chestTightHug : primaryCapybaraState
+            capybaraState: capybaraState,
+            supplementalNote: supplementalNote,
+            supplementalImages: supplementalImages
         )
         todayEntry = entry
         entries.removeAll { Calendar.current.isDate($0.date, inSameDayAs: Date()) }
         entries.insert(entry, at: 0)
         database.saveEntries(entries)
+        supplementalDraft = SupplementalDraft()
+        activeGenerationID = nil
         generationStatus = .idle
     }
 
     func resetToday() {
         todayEntry = nil
+        activeGenerationID = nil
         generationStatus = .idle
+        supplementalDraft = SupplementalDraft()
     }
 
     var currentWeatherContext: WeatherContext {

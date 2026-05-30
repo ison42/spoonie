@@ -53,16 +53,27 @@
 
 ## 3. 今日声明 AI 链路
 
-当前实现用 `LocalStatementAIService` 模拟 AI 生成，已经有 loading 流程和服务协议。
+当前实现采用“CloudBase 优先，本地兜底”的声明生成链路，已经有 loading 流程和服务协议。
 
 代码：
 
 - `ios/Spoonie/Spoonie/Services/StatementAIService.swift`
 - `StatementAIProviding`
 - `LocalStatementAIService`
-- `RemoteStatementAIService`
+- `CloudBaseStatementAIService`
+- `cloudbase/functions/generateDeclaration`
 
-后续接入真实 AI 时，只需要把 `SpoonieStore` 里的 `statementService` 替换成 `RemoteStatementAIService` 或 CloudBase SDK 包装。
+正式版不在 iOS App 内保存智谱 token。App 只调用 CloudBase 云函数 URL；云函数通过环境变量读取 `ZHIPU_API_KEY`，再调用智谱 `chat/completions` / OpenAI 兼容接口。
+
+云函数侧还会读取 `spoonie_remote_config/declaration_generation` 作为远程配置，并把生成结果写入 `spoonie_daily_declarations`。v1 图片只传数量和云存储引用，补充文本只传截断摘要，后续如果开启多模态，再通过远程配置切换处理策略。
+
+开发阶段可用模拟器写入云函数 URL：
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl spawn 8229385F-A685-4B2C-B45D-10643645897F defaults write com.cansheng.spoonie cloudBaseGenerateDeclarationURL "https://你的-cloudbase-http-url"
+```
+
+未配置 URL 时，`StatementAIServiceFactory` 自动使用 `LocalStatementAIService`。
 
 请求变量：
 
@@ -72,6 +83,8 @@
 - 短天气
 - 主要 IP 状态 key
 - 日期/时间语境
+- “说多点”补充文本摘要
+- 补充图片数量和后续云存储引用
 
 边界：
 
@@ -79,6 +92,7 @@
 - 不输出行动建议。
 - 不说“明天一定会更好”。
 - 不使用勺子隐喻，除非用户自己输入。
+- 不逐字复述“说多点”里的隐私原文，只把它作为轻量上下文。
 - 遇到高风险文本时，后续要先走 `riskCheck`，不要普通生成。
 
 ## 4. 状态词与素材映射
