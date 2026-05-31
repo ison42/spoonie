@@ -19,6 +19,8 @@
 		100000000000000000000110 /* SpoonieDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000012 /* SpoonieDatabase.swift */; };
 		100000000000000000000111 /* LocationWeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000013 /* LocationWeatherService.swift */; };
 		100000000000000000000112 /* StatementAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000014 /* StatementAIService.swift */; };
+		100000000000000000000113 /* EchoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000015 /* EchoView.swift */; };
+		100000000000000000000114 /* AccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000016 /* AccountViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,8 @@
 		100000000000000000000012 /* SpoonieDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Support/SpoonieDatabase.swift; sourceTree = "<group>"; };
 		100000000000000000000013 /* LocationWeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LocationWeatherService.swift; sourceTree = "<group>"; };
 		100000000000000000000014 /* StatementAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/StatementAIService.swift; sourceTree = "<group>"; };
+		100000000000000000000015 /* EchoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/EchoView.swift; sourceTree = "<group>"; };
+		100000000000000000000016 /* AccountViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/AccountViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,8 +95,10 @@
 			isa = PBXGroup;
 			children = (
 				100000000000000000000004 /* Components.swift */,
+				100000000000000000000016 /* AccountViews.swift */,
 				100000000000000000000005 /* ContentView.swift */,
 				100000000000000000000006 /* TodayViews.swift */,
+				100000000000000000000015 /* EchoView.swift */,
 				100000000000000000000007 /* DrawerView.swift */,
 				100000000000000000000008 /* MeView.swift */,
 			);
@@ -198,6 +204,8 @@
 				100000000000000000000110 /* SpoonieDatabase.swift in Sources */,
 				100000000000000000000111 /* LocationWeatherService.swift in Sources */,
 				100000000000000000000112 /* StatementAIService.swift in Sources */,
+				100000000000000000000113 /* EchoView.swift in Sources */,
+				100000000000000000000114 /* AccountViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

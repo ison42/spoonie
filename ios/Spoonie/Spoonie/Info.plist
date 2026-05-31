@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>用于把当前位置转成一句温柔的天气描述，不会保存精确地址。</string>
+	<key>SpoonieCloudBaseGenerateDeclarationURL</key>
+	<string></string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

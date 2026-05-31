@@ -49,13 +49,13 @@ struct MoodChip: View {
                 .font(.system(size: small ? 10 : 14, weight: .regular))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-            if !small {
+            if isSelected && !small {
                 Image(systemName: "checkmark")
                     .font(.system(size: 8, weight: .bold))
                     .frame(width: 16, height: 16)
-                    .background((isSelected ? Color.white.opacity(0.3) : Color(red: 0.88, green: 0.87, blue: 0.92)).opacity(isSelected ? 1 : 0.75))
+                    .background(Color.white.opacity(0.3))
                     .clipShape(Circle())
-                    .foregroundStyle(isSelected ? .white : Color.spoonieMuted.opacity(0.55))
+                    .foregroundStyle(.white)
             }
         }
         .foregroundStyle(isSelected ? .white : (small ? Color.spooniePurpleDeep : Color.spoonieMuted))
@@ -169,6 +169,8 @@ struct SpoonieTabBar: View {
         switch tab {
         case .today:
             Image(systemName: "calendar")
+        case .echo:
+            Image(systemName: "quote.bubble")
         case .drawer:
             Image(systemName: "archivebox")
         case .me:
