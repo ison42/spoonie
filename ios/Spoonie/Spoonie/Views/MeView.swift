@@ -8,27 +8,54 @@ struct MeView: View {
         ZStack(alignment: .top) {
             Color.spoonieBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    StatusBarShim()
+            GeometryReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        ProfileHero(profile: store.userProfile) {
+                            activeSheet = store.userProfile.isLoggedIn ? .profile : .login
+                        }
 
-                    header
-                        .padding(.top, 8)
+                        ProfileSettingsCard(
+                            weatherText: store.weatherStatus.displayText,
+                            onWeather: { activeSheet = .weather },
+                            onAboutSpoon: { activeSheet = .aboutSpoon },
+                            onHelp: { activeSheet = .help },
+                            onContact: { activeSheet = .contact }
+                        )
+                        .padding(.top, 4)
 
-                    QuietStatusCard(entries: store.entries)
+                        if store.userProfile.isLoggedIn {
+                            Button {
+                                store.logout()
+                            } label: {
+                                Text("退出登录")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(Color.spoonieMuted)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 18)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, -2)
+                        }
 
-                    QuietSettingsCard(
-                        weatherText: store.weatherStatus.displayText,
-                        onWeather: { activeSheet = .weather },
-                        onDrawer: { store.selectedTab = .drawer },
-                        onSafety: { activeSheet = .safety }
-                    )
+                        Spacer(minLength: 24)
+                    }
+                    .frame(width: proxy.size.width)
+                    .padding(.bottom, 30)
                 }
-                .padding(.bottom, 26)
             }
         }
+        .ignoresSafeArea(edges: .top)
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
+            case .login:
+                LoginSheet(reason: "登录后可以保存头像昵称，也可以发回声和轻轻回应别人。")
+                    .environmentObject(store)
+                    .presentationDetents([.height(560), .large])
+            case .profile:
+                ProfileEditSheet()
+                    .environmentObject(store)
+                    .presentationDetents([.height(380), .medium])
             case .weather:
                 MeInfoSheet(
                     title: "天气与位置",
@@ -47,191 +74,197 @@ struct MeView: View {
                     ]
                 )
                 .presentationDetents([.height(330), .medium])
-            case .safety:
+            case .aboutSpoon:
                 MeInfoSheet(
-                    title: "安心说明",
-                    intro: "这里放一些边界和说明，平时不用反复看。",
+                    title: "关于勺子",
+                    intro: "勺子在这里不是工具，是一点点能量的隐喻。",
                     sections: [
                         MeInfoSection(
-                            icon: "lock",
-                            title: "隐私",
-                            body: "记录优先放在本地；AI 生成只使用声明所需的状态、天气和补充上下文。"
+                            icon: "heart",
+                            title: "为什么是勺子",
+                            body: "有些日子不是不努力，而是手里的力气真的有限。勺子代表今天还能慢慢使用的一点点能量。"
                         ),
                         MeInfoSection(
-                            icon: "heart.text.square",
-                            title: "AI 边界",
-                            body: "今日声明是陪伴式文字，不是医疗建议，也不是心理咨询。"
-                        ),
-                        MeInfoSection(
-                            icon: "cross.case",
-                            title: "需要帮助时",
-                            body: "如果有伤害自己或他人的想法，请尽快联系身边可信任的人或当地紧急服务。"
-                        ),
-                        MeInfoSection(
-                            icon: "questionmark.circle",
-                            title: "关于勺子",
-                            body: "勺子是一种能量隐喻。水豚拿着勺子，是想陪你承认：有些日子就是只能慢慢来。"
+                            icon: "pawprint",
+                            title: "为什么是水豚",
+                            body: "水豚拿着木勺，是这个 App 的陪伴 IP。它不催你变好，只陪你把今天先放稳。"
                         )
                     ]
                 )
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.height(390), .medium])
+            case .help:
+                MeInfoSheet(
+                    title: "需要帮助时",
+                    intro: "今日声明是陪伴式文字，不替代医疗建议或心理咨询。",
+                    sections: [
+                        MeInfoSection(
+                            icon: "person.2",
+                            title: "先找一个真实的人",
+                            body: "如果今天很难撑住，优先联系身边可信任的人，让对方知道你现在需要陪伴。"
+                        ),
+                        MeInfoSection(
+                            icon: "cross.case",
+                            title: "出现危险想法时",
+                            body: "如果有伤害自己或他人的想法，请尽快联系当地紧急服务，或前往附近医院急诊。"
+                        )
+                    ]
+                )
+                .presentationDetents([.height(390), .medium])
+            case .contact:
+                MeInfoSheet(
+                    title: "联系我",
+                    intro: "这里会放正式版的反馈入口。现在先把它留成一个很轻的位置。",
+                    sections: [
+                        MeInfoSection(
+                            icon: "bubble.left.and.text.bubble.right",
+                            title: "体验反馈",
+                            body: "如果你觉得哪里不舒服、哪里被接住了，后续可以从这里发给我们。"
+                        ),
+                        MeInfoSection(
+                            icon: "sparkles",
+                            title: "一起打磨",
+                            body: "勺子星人会优先把反馈变成更低压力、更好理解的体验。"
+                        )
+                    ]
+                )
+                .presentationDetents([.height(340), .medium])
             }
         }
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: 16) {
-            AnimatedCapybara(state: .idleDefault)
-                .frame(width: 92, height: 92)
-                .background(Color.white.opacity(0.7))
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("我的")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(Color.spoonieInk)
-                Text("今天也不用很厉害")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.spoonieMuted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 24)
     }
 }
 
 private enum MeSheet: Identifiable {
+    case login
+    case profile
     case weather
-    case safety
+    case aboutSpoon
+    case help
+    case contact
 
     var id: String {
         switch self {
+        case .login: return "login"
+        case .profile: return "profile"
         case .weather: return "weather"
-        case .safety: return "safety"
+        case .aboutSpoon: return "aboutSpoon"
+        case .help: return "help"
+        case .contact: return "contact"
         }
     }
 }
 
-private struct QuietStatusCard: View {
-    let entries: [DailyEntry]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "archivebox")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.spooniePurple)
-                    .frame(width: 30, height: 30)
-                    .background(Color(red: 0.92, green: 0.90, blue: 0.99))
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color.spoonieInk)
-                    Text(subtitle)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.spoonieMuted)
-                }
-                Spacer()
-            }
-        }
-        .padding(16)
-        .spoonieCard(radius: 18)
-        .padding(.horizontal, 16)
-    }
-
-    private var title: String {
-        if entries.isEmpty {
-            return "还没有放进抽屉的日子"
-        }
-        return "抽屉里已有 \(entries.count) 天"
-    }
-
-    private var subtitle: String {
-        guard let latest = entries.sorted(by: { $0.date > $1.date }).first else {
-            return "等你想放的时候再放"
-        }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.dateFormat = "M月d日"
-        return "最近放好：\(formatter.string(from: latest.date))"
-    }
-}
-
-private struct QuietSettingsCard: View {
-    let weatherText: String
-    let onWeather: () -> Void
-    let onDrawer: () -> Void
-    let onSafety: () -> Void
+private struct ProfileHero: View {
+    let profile: UserProfile
+    let onEdit: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            QuietSettingRow(
-                icon: "cloud",
-                title: "天气与位置",
-                subtitle: weatherText,
-                action: onWeather
-            )
+            ZStack(alignment: .top) {
+                AssetImage(path: "decor/profile/profile_header_curved_v1.png", contentMode: .fit)
+                    .frame(height: 356)
+                    .frame(maxWidth: .infinity)
 
-            Divider().padding(.leading, 56)
+                Button(action: onEdit) {
+                    UserAvatar(
+                        preset: profile.avatarPreset,
+                        imageBase64: profile.avatarImageBase64,
+                        size: 96
+                    )
+                    .overlay(Circle().stroke(Color.white, lineWidth: 4))
+                    .shadow(color: Color.spooniePurple.opacity(0.18), radius: 10, x: 0, y: 6)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 260)
+            }
 
-            QuietSettingRow(
-                icon: "archivebox",
-                title: "日子抽屉",
-                subtitle: "看看放好的日子",
-                action: onDrawer
-            )
-
-            Divider().padding(.leading, 56)
-
-            QuietSettingRow(
-                icon: "shield",
-                title: "安心说明",
-                subtitle: "隐私、AI 边界、需要帮助时",
-                action: onSafety
-            )
+            Button(action: onEdit) {
+                Text(profile.isLoggedIn ? profile.displayName : "未登录")
+                    .font(.system(size: 21, weight: .semibold))
+                    .foregroundStyle(Color.spoonieInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 48)
+                    .padding(.top, 8)
+            }
+            .buttonStyle(.plain)
         }
-        .spoonieCard(radius: 18)
-        .padding(.horizontal, 16)
     }
 }
 
-private struct QuietSettingRow: View {
+private struct ProfileSettingsCard: View {
+    let weatherText: String
+    let onWeather: () -> Void
+    let onAboutSpoon: () -> Void
+    let onHelp: () -> Void
+    let onContact: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ProfileSettingRow(
+                icon: "cloud",
+                title: "天气与位置",
+                action: onWeather
+            )
+
+            Divider().padding(.leading, 82)
+
+            ProfileSettingRow(
+                icon: "star.circle",
+                title: "关于勺子",
+                action: onAboutSpoon
+            )
+
+            Divider().padding(.leading, 82)
+
+            ProfileSettingRow(
+                icon: "heart.text.square",
+                title: "需要帮助时",
+                action: onHelp
+            )
+
+            Divider().padding(.leading, 82)
+
+            ProfileSettingRow(
+                icon: "envelope",
+                title: "联系我",
+                action: onContact
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .spoonieCard(radius: 24)
+        .padding(.horizontal, 24)
+    }
+}
+
+private struct ProfileSettingRow: View {
     let icon: String
     let title: String
-    let subtitle: String
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 20) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(Color.spooniePurple)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 48, height: 48)
                     .background(Color(red: 0.92, green: 0.90, blue: 0.99))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.spoonieInk)
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.spoonieMuted)
-                        .lineLimit(1)
-                }
+                Text(title)
+                    .font(.system(size: 21, weight: .semibold))
+                    .foregroundStyle(Color.spoonieInk)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.spoonieMuted.opacity(0.6))
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(Color.spoonieMuted.opacity(0.56))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 17)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

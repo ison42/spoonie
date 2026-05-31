@@ -5,6 +5,8 @@
 当前 MVP 使用本地 JSON 文件作为轻量数据库：
 
 - 文件：`daily_entries.json`
+- 文件：`echo_posts.json`
+- 文件：`user_profile.json`
 - 位置：App 沙盒 `Documents`
 - 代码：`ios/Spoonie/Spoonie/Support/SpoonieDatabase.swift`
 
@@ -17,8 +19,28 @@
 - `tags`
 - `statement`
 - `capybaraState`
+- `supplementalNote`
+- `supplementalImages`
+- `echoPostId`
+- `echoPublishedAt`
+- `echoSourceText`
 
-这样先保证离线可用和隐私感。后续需要云同步时，保留本地库作为缓存层，云端可映射到 CloudBase / Supabase / 自建 API 的 `records` 表。
+`EchoPost` 是回声 MVP 的本地模型，字段包括：
+
+- `sourceEntryId`
+- `authorHash`
+- `identityMode`
+- `authorDisplayName`
+- `authorAvatarPreset`
+- `text`
+- `tags`
+- `weatherShort`
+- `reactionCounts`
+- `myReaction`
+- `isHidden`
+- `isReported`
+
+`UserProfile` 是低负担账号资料，字段包括手机号、随机昵称、头像预设和登录状态。这样先保证离线可用和隐私感。后续需要云同步时，保留本地库作为缓存层，云端可映射到 CloudBase / Supabase / 自建 API 的 `records`、`echo_posts`、`echo_reactions`、`echo_reports`、`user_profiles` 表。
 
 ## 2. 天气与定位链路
 
@@ -111,7 +133,51 @@ IP 资源通过 `CapybaraState` 映射到 `assets/app-final`：
 - 日子抽屉卡片：使用主要状态对应的紫色剪影
 - 日子抽屉详情：使用该记录保存时的真实状态
 
-## 5. 已实现交互
+## 5. 回声链路
+
+`回声`是底部第四个 tab，定位为匿名低压力真人回应空间，不是论坛或信息流。
+
+当前实现：
+
+1. 今日声明页点击 `发到回声`。
+2. 如果未登录，弹出低负担手机号登录 sheet，并保留随机头像昵称。
+3. App 打开预览编辑 sheet，只默认带入“说多点”正文；没有补充正文时保持空白，不使用 AI 今日声明代替用户。
+4. 用户选择匿名或用头像昵称发送。
+5. 用户确认后，本地创建 `EchoPost`，并在 `DailyEntry` 上记录 `echoPostId`、`echoPublishedAt`、`echoSourceText`。
+6. 回声页展示纸条、身份展示方式、状态标签、模糊时间和轻回应按钮。
+7. 每张非本人纸条只能选择一个轻回应；可执行 `不想看到`、`举报`；本人纸条可 `收回这张纸条`。
+
+后续 CloudBase 化：
+
+- `publishEcho` 云函数：保存用户确认过的匿名文字，并先调用 `riskCheck`。
+- `reactEcho` 云函数：对同一用户同一纸条做单选回应 upsert。
+- `moderateEcho` 云函数：处理隐藏、举报和作者收回。
+- `sendSmsCode` / `verifySmsCode` 云函数：手机号验证码登录。
+- 推荐排序优先同状态标签和近 48 小时，不按热度排序。
+
+边界：
+
+- v1 不发布图片到回声。
+- 回声只发布用户自己写的内容，不发布 AI 今日声明。
+- 不开放评论、私信、关注、热门、点赞排行。
+- 匿名发送不公开头像昵称；署名发送只公开头像昵称，不公开手机号、精确时间、精确位置。
+- 危机内容不进入普通回声，转为帮助提示。
+
+## 6. 账号与触发式登录
+
+App 不在启动时强制登录。首次打开会生成随机头像昵称，让用户能先进入体验。
+
+触发登录的操作：
+
+- 生成今日声明。
+- 发到回声。
+- 给回声做轻回应。
+- 查看自己的回声。
+
+当前开发版用本地模拟验证码 `1234`，正式版需要接短信服务和 CloudBase 登录态。手机号只用于账号识别，不展示给其他用户。
+个人中心使用“氛围头图 + 居中头像昵称 + 少量设置项”的结构。未登录时头像区显示 `未登录`，点击进入登录；登录后头像和昵称可直接点击编辑，未上传时使用随机默认头像；登录后提供低强调退出登录，退出后保留本地随机头像昵称，方便下次继续低负担使用。
+
+## 7. 已实现交互
 
 - 定位授权入口和天气加载状态。
 - 标签横向三行滑动云。
@@ -121,6 +187,9 @@ IP 资源通过 `CapybaraState` 映射到 `assets/app-final`：
 - 未选择标签时禁用生成按钮。
 - 今日声明 loading 页。
 - 声明自动保存到本地记录。
+- 今日声明主动发到回声。
+- 触发式手机号登录、随机头像昵称、个人中心头像上传/昵称编辑。
+- 回声四 tab、匿名/署名纸条、轻回应、隐藏/举报/收回。
 - 日子抽屉记录列表。
 - 抽屉滚动时出现简化标题栏。
 - 点击记录进入详情页并可返回。

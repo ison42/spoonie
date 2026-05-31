@@ -169,6 +169,8 @@ struct SpoonieTabBar: View {
         switch tab {
         case .today:
             Image(systemName: "calendar")
+        case .echo:
+            Image(systemName: "quote.bubble")
         case .drawer:
             Image(systemName: "archivebox")
         case .me:

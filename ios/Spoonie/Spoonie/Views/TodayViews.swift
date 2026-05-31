@@ -7,6 +7,7 @@ struct CollectionView: View {
     @AppStorage("tagCloudVariant") private var tagCloudVariant = "ribbon"
     @State private var isShowingCustomInput = false
     @State private var isShowingSupplementalInput = false
+    @State private var isShowingLogin = false
     @State private var customText = ""
 
     var body: some View {
@@ -69,7 +70,11 @@ struct CollectionView: View {
                             isEnabled: !store.selectedTags.isEmpty,
                             isLoading: store.generationStatus == .loading
                         ) {
-                            Task { await store.generateTodayDeclaration() }
+                            if store.userProfile.isLoggedIn {
+                                Task { await store.generateTodayDeclaration() }
+                            } else {
+                                isShowingLogin = true
+                            }
                         }
                         .frame(width: 214)
                     }
@@ -88,6 +93,13 @@ struct CollectionView: View {
             .sheet(isPresented: $isShowingSupplementalInput) {
                 SupplementalDraftSheet(draft: $store.supplementalDraft)
                     .presentationDetents([.height(514), .large])
+            }
+            .sheet(isPresented: $isShowingLogin) {
+                LoginSheet(reason: "生成今日声明会保存到你的抽屉里，登录后更不容易丢。") {
+                    Task { await store.generateTodayDeclaration() }
+                }
+                .environmentObject(store)
+                .presentationDetents([.height(560), .large])
             }
         }
     }
@@ -297,7 +309,7 @@ private struct SupplementalDraftSheet: View {
     }
 }
 
-private struct MultilineNoteEditor: UIViewRepresentable {
+struct MultilineNoteEditor: UIViewRepresentable {
     @Binding var text: String
     @Binding var isFocused: Bool
     let textColor: UIColor
@@ -1075,6 +1087,9 @@ private struct LoadingWordPaper: View {
 struct DeclarationView: View {
     @EnvironmentObject private var store: SpoonieStore
     let entry: DailyEntry
+    @State private var isPublishingEcho = false
+    @State private var isShowingEchoLogin = false
+    @State private var echoPublishError: String?
 
     var body: some View {
         GeometryReader { geometry in
@@ -1113,6 +1128,16 @@ struct DeclarationView: View {
                         DeclarationContentCard(title: "今天的你", entry: entry)
                             .padding(.top, -9)
 
+                        EchoSharePrompt(entry: entry, onPublish: {
+                            if store.userProfile.isLoggedIn {
+                                isPublishingEcho = true
+                            } else {
+                                isShowingEchoLogin = true
+                            }
+                        })
+                            .frame(width: 341)
+                            .padding(.top, 12)
+
                         if entry.hasSupplementalContext {
                             SupplementalContextPanel(entry: entry)
                                 .frame(width: 341)
@@ -1136,6 +1161,18 @@ struct DeclarationView: View {
                 }
             }
         }
+        .sheet(isPresented: $isPublishingEcho) {
+            EchoPublishSheet(entry: entry)
+                .environmentObject(store)
+                .presentationDetents([.height(520), .large])
+        }
+        .sheet(isPresented: $isShowingEchoLogin) {
+            LoginSheet(reason: "发到回声和回应别人时需要登录，但你仍然可以选择匿名出现。") {
+                isPublishingEcho = true
+            }
+            .environmentObject(store)
+            .presentationDetents([.height(560), .large])
+        }
     }
 
     private var todaySubtitle: String {
@@ -1143,6 +1180,223 @@ struct DeclarationView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "M月d日 EEEE"
         return formatter.string(from: Date()).replacingOccurrences(of: "星期", with: "星期")
+    }
+}
+
+private struct EchoSharePrompt: View {
+    let entry: DailyEntry
+    let onPublish: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isPublished ? "checkmark.seal" : "quote.bubble")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.spooniePurple)
+                .frame(width: 34, height: 34)
+                .background(Color(red: 0.92, green: 0.90, blue: 0.99))
+                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(isPublished ? "已经放进回声" : "想被真人轻轻回应吗？")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.spoonieInk)
+                Text(isPublished ? "别人只能看到你确认过的匿名文字" : "发一张匿名纸条，别人可以给你小小回应")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.spoonieMuted)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            if !isPublished {
+                Button(action: onPublish) {
+                    Text("发到回声")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .frame(height: 30)
+                        .background(Color.spooniePurple)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(14)
+        .spoonieCard(radius: 18)
+    }
+
+    private var isPublished: Bool {
+        entry.echoPostId != nil
+    }
+}
+
+private struct EchoPublishSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: SpoonieStore
+    let entry: DailyEntry
+    @State private var text: String
+    @State private var isEditorFocused = false
+    @State private var errorMessage: String?
+    @State private var didPublish = false
+    @State private var identityMode: EchoIdentityMode = .anonymous
+
+    init(entry: DailyEntry) {
+        self.entry = entry
+        _text = State(initialValue: "")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("发到回声")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Color.spoonieInk)
+                    Text("只发送你自己写下的内容，不会发送 AI 今日声明。")
+                        .font(.system(size: 12))
+                        .lineSpacing(3)
+                        .foregroundStyle(Color.spoonieMuted)
+                }
+                Spacer()
+                Button("取消") {
+                    dismiss()
+                }
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color.spoonieMuted)
+            }
+
+            EchoIdentityPicker(selection: $identityMode)
+                .environmentObject(store)
+
+            HStack(spacing: 6) {
+                ForEach(entry.tags.prefix(4), id: \.self) { tag in
+                    StatementChip(title: tag)
+                }
+            }
+
+            ZStack(alignment: .topLeading) {
+                MultilineNoteEditor(
+                    text: $text,
+                    isFocused: $isEditorFocused,
+                    textColor: UIColor(Color.spoonieInk),
+                    font: .systemFont(ofSize: 16),
+                    inset: UIEdgeInsets(top: 16, left: 14, bottom: 16, right: 14)
+                )
+                .frame(height: 190)
+                .background(Color.white.opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.spooniePurple.opacity(0.14), lineWidth: 1)
+                )
+
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("写下你愿意被别人看到的那一小段。这里不会自动拿 AI 文案来代替你。")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.spoonieMuted.opacity(0.62))
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 20)
+                        .allowsHitTesting(false)
+                }
+            }
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "lock")
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.top, 2)
+                Text(identityMode == .anonymous ? "匿名发送时不会带上图片、头像昵称、身份或精确时间。内容会先做安全检查。" : "署名发送会展示头像昵称，但仍不会带上图片、手机号或精确时间。内容会先做安全检查。")
+                    .font(.system(size: 12))
+                    .lineSpacing(4)
+            }
+            .foregroundStyle(Color.spoonieMuted)
+            .padding(.horizontal, 2)
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 12))
+                    .lineSpacing(4)
+                    .foregroundStyle(Color(red: 0.70, green: 0.32, blue: 0.40))
+                    .padding(.horizontal, 2)
+            }
+
+            Spacer(minLength: 0)
+
+            PrimaryButton(title: didPublish ? "已经放好" : "确认发出", isEnabled: canPublish && !didPublish && store.userProfile.isLoggedIn) {
+                publish()
+            }
+        }
+        .padding(24)
+        .background(Color.spoonieBackground.ignoresSafeArea())
+        .onAppear {
+            if text.isEmpty {
+                text = store.suggestedEchoText(for: entry)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+                isEditorFocused = true
+            }
+        }
+    }
+
+    private var canPublish: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func publish() {
+        do {
+            _ = try store.publishEcho(from: entry, text: text, identityMode: identityMode)
+            didPublish = true
+            isEditorFocused = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                dismiss()
+                store.selectedTab = .echo
+            }
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? "这张纸条暂时没放好。"
+        }
+    }
+}
+
+private struct EchoIdentityPicker: View {
+    @EnvironmentObject private var store: SpoonieStore
+    @Binding var selection: EchoIdentityMode
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(EchoIdentityMode.allCases) { mode in
+                Button {
+                    selection = mode
+                } label: {
+                    HStack(spacing: 8) {
+                        if mode == .named {
+                            UserAvatar(preset: store.userProfile.avatarPreset, size: 24)
+                        } else {
+                            Image(systemName: "eye.slash")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(selection == mode ? .white : Color.spooniePurple)
+                                .frame(width: 24, height: 24)
+                                .background((selection == mode ? Color.white.opacity(0.22) : Color.white.opacity(0.72)))
+                                .clipShape(Circle())
+                        }
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(mode.title)
+                                .font(.system(size: 12, weight: .semibold))
+                            Text(mode == .named ? store.userProfile.displayName : mode.subtitle)
+                                .font(.system(size: 9))
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundStyle(selection == mode ? .white : Color.spooniePurpleDeep)
+                    .padding(.horizontal, 10)
+                    .frame(height: 48)
+                    .frame(maxWidth: .infinity)
+                    .background(selection == mode ? Color.spooniePurple : Color.white.opacity(0.66))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 

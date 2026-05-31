@@ -17,6 +17,8 @@ struct ContentView: View {
                     } else {
                         CollectionView()
                     }
+                case .echo:
+                    EchoView()
                 case .drawer:
                     DrawerView()
                 case .me:
